@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "gcc",
+      "args": [
+        "-o",
+        "SecureKeyInput.exe",
+        "src/*.c",
+        "-Iinclude",
+        "-IC:/Program Files/OpenSSL/include",  
+        "-LC:/Program Files/OpenSSL/lib",      
+        "-luser32",
+        "-lgdi32",
+        "-lcrypt32",
+        "-lssl",
+        "-lcrypto"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}

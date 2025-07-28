@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "hook_detector.h": "c",
+        "input_encrypt.h": "c",
+        "logger.h": "c",
+        "evp.h": "c",
+        "err.h": "c",
+        "crypto.h": "c"
+    }
+}
